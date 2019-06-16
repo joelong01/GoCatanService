@@ -8,8 +8,7 @@ import (
 	"bytes"
 	"log"
 	"net/http"
-	"time"
-
+	"time"	
 	"github.com/gorilla/websocket"
 )
 
@@ -35,8 +34,11 @@ var (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: checkOrigin,
 }
-
+func checkOrigin(r *http.Request) bool {
+	return true
+}
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
 	hub *Hub
@@ -63,6 +65,7 @@ func (c *Client) readPump() {
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		_, message, err := c.conn.ReadMessage()
+		log.Printf("message recieved: %s", message)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
@@ -99,6 +102,7 @@ func (c *Client) writePump() {
 			if err != nil {
 				return
 			}
+			log.Println(message)
 			w.Write(message)
 
 			// Add queued chat messages to the current websocket message.
@@ -122,6 +126,7 @@ func (c *Client) writePump() {
 
 // serveWs handles websocket requests from the peer.
 func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+	log.Println("serveWs called")	
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
