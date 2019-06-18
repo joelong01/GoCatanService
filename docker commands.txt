@@ -1,0 +1,5 @@
+docker build -t catan-relay .
+docker image ls
+docker container ls
+docker run -d -p 8080:8080 catan-relay
+docker container stop b315cb66d800
